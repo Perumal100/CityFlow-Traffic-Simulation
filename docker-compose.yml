@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  cityflow:
+    build: .
+    container_name: cityflow-simulation
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    network_mode: "host"
+    stdin_open: true
+    tty: true
