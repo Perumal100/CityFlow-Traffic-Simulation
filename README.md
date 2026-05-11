@@ -12,7 +12,7 @@ Real-time multi-threaded traffic simulation with predictive analytics, adaptive 
 
 ## 👥 Project Team
 
-This project was developed as part of **CS-UY 1114 - Introduction to Java**
+This project was developed as part of **CS6103 - Introduction to Java**
 
 **Team Members:**
 - **Perumal Marimuthu** - [@Perumal100](https://github.com/Perumal100) - Lead Developer & System Architecture
@@ -21,7 +21,7 @@ This project was developed as part of **CS-UY 1114 - Introduction to Java**
 
 **Institution:** New York University Tandon School of Engineering  
 **Semester:** Spring 2026  
-**Course:** CS6103 - Introduction to Java
+**Course:** CS-UY 1114 - Introduction to Java
 
 ---
 
@@ -151,3 +151,267 @@ This is **CRITICAL** - don't skip this step!
 #### 4. Run the Application
 
 1. In **Package Explorer**, expand:
+   ```
+   CityFlow → src/main/java → com.cityflow
+   ```
+2. Right-click **Main.java**
+3. Select **Run As** → **Java Application**
+
+#### 5. Expected Output
+
+**Console:**
+```
+=== CityFlow Traffic Simulation ===
+Initializing simulation...
+Created 100 intersections
+All intersection threads started
+Vehicle spawning started
+Central Controller started
+Simulation server started on port 8080
+Simulation started successfully!
+```
+
+**GUI:** A maximized window will open showing the live traffic simulation with moving vehicles.
+
+---
+
+## 📊 Using the Application
+
+### Main Interface Components
+
+#### 1. **Live Traffic Map** (Left/Center)
+- **10×10 grid** of intersections with roads
+- **Colored backgrounds** show congestion levels:
+  - 🟢 **Green** = Low traffic (0-30%)
+  - 🟡 **Yellow** = Moderate traffic (30-60%)
+  - 🔴 **Red** = High traffic (60-100%)
+- **Traffic signals** with realistic 3-light design
+- **Moving vehicles** - 40+ cars navigating the grid
+- **Queue indicators** - Red circles with numbers showing waiting vehicles
+
+#### 2. **Analytics Dashboard** (Right Panel)
+
+**Primary Metrics:**
+- **Total Vehicles** - Cumulative count of vehicles processed
+- **Active Vehicles** - Cars currently on the road
+- **Avg Congestion** - Average across all 100 intersections
+- **Throughput** - Vehicles processed per minute
+
+**Performance Metrics:**
+- **Avg Wait Time** - Estimated average vehicle delay
+- **Prediction Accuracy** - Effectiveness of forecasting algorithm
+- **System Uptime** - Running time in MM:SS format
+
+**Bottleneck Alerts:**
+- **Persistent high congestion** - Intersection needs intervention
+- **Rapidly increasing** - Preemptive warning
+- **Critical with spillover risk** - Severe backup affecting neighbors
+
+#### 3. **Performance Trends Chart** (Bottom)
+- **Live graph** showing congestion over last 2 minutes
+- **Smooth curve** updates every 0.5 seconds
+- **Grid lines** for easy reading (0%, 50%, 100%)
+
+---
+
+## 🏗️ System Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     CityFlow Application                      │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌────────────┐  ┌────────────┐       ┌────────────┐        │
+│  │Intersection│  │Intersection│  ...  │Intersection│        │
+│  │ Thread 1   │  │ Thread 2   │       │ Thread 100 │        │
+│  │ [Queue]    │  │ [Queue]    │       │ [Queue]    │        │
+│  └─────┬──────┘  └─────┬──────┘       └─────┬──────┘        │
+│        │                │                     │               │
+│        └────────────────┴─────────────────────┘               │
+│                         │                                     │
+│                ┌────────▼──────────┐                          │
+│                │ Central Controller│                          │
+│                │  - Coordination   │                          │
+│                │  - Adaptive Timing│◄────┐                    │
+│                │  - Green Waves    │     │                    │
+│                └────────┬──────────┘     │                    │
+│                         │                │                    │
+│                ┌────────▼──────────┐     │                    │
+│                │Predictive Analyzer│     │                    │
+│                │ - WMA Forecasting │     │                    │
+│                │ - Bottleneck Det. │─────┘                    │
+│                └────────┬──────────┘                          │
+│                         │                                     │
+│         ┌───────────────┼───────────────┬──────────────┐     │
+│         │               │               │              │     │
+│  ┌──────▼──────┐ ┌─────▼─────┐ ┌──────▼──────┐ ┌────▼────┐ │
+│  │  Database   │ │  Network  │ │     GUI     │ │ Vehicle │ │
+│  │   Manager   │ │  Server   │ │  (60 FPS)   │ │ Threads │ │
+│  │  (SQLite)   │ │ Port 8080 │ │  Animation  │ │         │ │
+│  └─────────────┘ └───────────┘ └─────────────┘ └─────────┘ │
+│                                                               │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🛠️ Technologies & Implementation
+
+### Core Technologies
+- **Java 17** - Latest LTS version with modern features
+- **Swing** - Native GUI framework with custom painting
+- **SQLite** - Lightweight embedded database (optional)
+- **Docker** - Containerization for easy deployment
+
+### Concurrency Patterns
+- **Producer-Consumer** - Vehicle spawning and processing
+- **Thread Pools** - ExecutorService for intersection management
+- **Blocking Queues** - Thread-safe vehicle queuing
+- **Synchronized Methods** - Signal state protection
+- **Atomic Variables** - Counter management
+
+### Key Algorithms
+
+#### 1. Weighted Moving Average Prediction
+```
+Prediction = Σ(weight[i] × congestion_history[i])
+
+Where:
+- Recent data weighted higher (15%)
+- Older data weighted lower (5%)
+- 10-point rolling window
+- Normalizes for incomplete history
+```
+
+#### 2. Adaptive Signal Timing
+```java
+if (congestion < 0.2) {
+    greenDuration = 6 seconds;   // Light traffic
+} else if (congestion < 0.6) {
+    greenDuration = 8 seconds;   // Normal traffic
+} else {
+    greenDuration = 12 seconds;  // Heavy traffic
+}
+```
+
+#### 3. Bottleneck Detection
+```
+Flags issued when:
+- Congestion > 80% for 3+ cycles (Persistent)
+- Congestion increasing > 20% per cycle (Rapid)
+- Queue spillover to adjacent intersections (Critical)
+```
+
+---
+
+## 📁 Project Structure
+
+```
+CityFlow-Traffic-Simulation/
+├── src/
+│   ├── main/java/com/cityflow/
+│   │   ├── Main.java                      # Application entry point
+│   │   ├── model/
+│   │   │   ├── Intersection.java          # Thread managing each intersection
+│   │   │   ├── Vehicle.java               # Vehicle movement logic
+│   │   │   └── TrafficSignal.java         # Signal states
+│   │   ├── controller/
+│   │   │   ├── CentralController.java     # Coordinates all intersections
+│   │   │   └── PredictiveAnalyzer.java    # Congestion forecasting
+│   │   ├── database/
+│   │   │   └── DatabaseManager.java       # SQLite operations
+│   │   ├── network/
+│   │   │   ├── SimulationServer.java      # Socket server
+│   │   │   └── ClientHandler.java         # Client connection handler
+│   │   └── gui/
+│   │       └── OptimizedProfessionalGUI.java  # Main GUI
+│   └── test/java/com/cityflow/
+│       └── IntersectionTest.java          # Unit tests
+├── docs/
+├── Dockerfile                              # Docker container config
+├── docker-compose.yml                      # Docker Compose config
+├── DOCKER_SETUP.md                         # Docker documentation
+├── USER_GUIDE.md                           # User manual
+└── README.md                              # This file
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Issue: "Cannot find Main class"
+**Solution:**
+1. Right-click project → **Build Path** → **Configure Build Path**
+2. Ensure **JRE System Library [JavaSE-17]** is listed
+3. If not, click **Add Library** → **JRE System Library** → **JavaSE-17**
+
+### Issue: Compilation errors in Eclipse
+**Solution:**
+1. **Project** → **Clean**
+2. Delete `bin/` folder
+3. **Project** → **Build Automatically** (ensure checked)
+
+### Issue: GUI not appearing
+**Solution:**
+1. Check console for errors
+2. Ensure Java 17+ is installed: `java -version`
+3. Try: `java -Djava.awt.headless=false -cp bin com.cityflow.Main`
+
+### Issue: "Port 8080 already in use"
+**Solution:**
+```bash
+# Windows - Find and kill process
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
+
+# Linux/Mac
+lsof -ti:8080 | xargs kill
+```
+
+---
+
+## 🚀 Future Enhancements
+
+- [ ] Emergency vehicles with signal priority
+- [ ] Multiple vehicle types (cars, buses, trucks)
+- [ ] Pedestrian crossings
+- [ ] Weather conditions affecting traffic
+- [ ] Machine learning predictions (LSTM)
+- [ ] Real traffic data integration
+
+---
+
+## 📝 License
+
+MIT License - Copyright (c) 2026 CityFlow Team
+
+---
+
+## 📞 Contact & Support
+
+**Team Members:**
+- **Perumal Marimuthu** - [@Perumal100](https://github.com/Perumal100)
+- **Ashik John** - Database & Analytics
+- **Achyuthan Sivasankar** - GUI & Testing
+
+For issues, check [Troubleshooting](#-troubleshooting) or create a GitHub issue.
+
+---
+
+## 🙏 Acknowledgments
+
+- **New York University Tandon School of Engineering** - For providing excellent education in computer science
+- **Course Instructor** - For guidance on Java programming and software development
+- **Java Community** - For comprehensive documentation and libraries
+- **Fellow Students** - For collaboration and feedback
+
+---
+
+## ⭐ Show Your Support
+
+If you find this project useful:
+- ⭐ Star this repository on GitHub
+- 🍴 Fork it for your own experiments
+- 📢 Share it with fellow students
+
+---
