@@ -21,7 +21,7 @@ This project was developed as part of **CS-UY 1114 - Introduction to Java**
 
 **Institution:** New York University Tandon School of Engineering  
 **Semester:** Spring 2026  
-**Course:** CS-UY 1114 - Introduction to Java
+**Course:** CS6103 - Introduction to Java
 
 ---
 
