@@ -51,8 +51,6 @@ Real-time multi-threaded traffic simulation with predictive analytics, adaptive 
 | **Thread-Safe Operations** | 1000s/sec | High throughput |
 | **Memory Consistency** | Guaranteed | Volatile + Atomic variables |
 
-**🎓 Academic Value:** These concepts are typically covered in graduate-level courses like "Advanced Operating Systems" or "Distributed Systems" - yet CityFlow implements them in a practical, working application.
-
 **💼 Industry Relevance:** These patterns are used in:
 - Web servers (handling thousands of requests)
 - Database systems (concurrent transactions)
@@ -65,9 +63,9 @@ Real-time multi-threaded traffic simulation with predictive analytics, adaptive 
 ## 👥 Project Team
 
 **Team Members:**
-- **Perumal Marimuthu** - [@Perumal100](https://github.com/Perumal100)
-- **Ashik John**
-- **Achyuthan Sivasankar**
+- **Perumal Marimuthu**(Netid - pm4069) - [@Perumal100](https://github.com/Perumal100)
+- **Ashik John**(Netid - am15464)
+- **Achyuthan Sivasankar**(Netid - as21154)
 
 **Institution:** New York University Tandon School of Engineering  
 **Course:** CS6103 - Introduction to Java  
@@ -384,21 +382,6 @@ CityFlow-Traffic-Simulation/
 | Deadlocks | 0 | 0 | ✅ |
 
 ---
-
-## 🎓 Educational Value
-
-### For Students:
-- Comprehensive demonstration of Java concurrency
-- Real-world application of threading concepts
-- Professional software engineering practices
-- GUI development with Swing
-- Network programming fundamentals
-
-### For Instructors:
-- Teaching aid for concurrency lectures
-- Example of clean architecture
-- Codebase for assignments/projects
-- Basis for discussing optimization techniques
 
 ### Concepts Demonstrated:
 ✅ Multi-threading (100+ threads)  
