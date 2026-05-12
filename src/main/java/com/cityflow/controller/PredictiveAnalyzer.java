@@ -140,7 +140,7 @@ public class PredictiveAnalyzer {
      * Recommends signal timing adjustment based on prediction
      */
     public int recommendSignalTiming(String intersectionId, int currentTiming) {
-        double prediction = predictCongestion(id);
+        double prediction = predictCongestion(intersectionId);
         
         if (prediction > 0.7) {
             // High congestion: increase green time by 50%

@@ -2,7 +2,8 @@ package com.cityflow;
 
 import com.cityflow.controller.CentralController;
 import com.cityflow.database.DatabaseManager;
-import com.cityflow.gui.SimulationGUI;
+import com.cityflow.gui.AppLookAndFeel;
+import com.cityflow.gui.CityFlowShellFrame;
 import com.cityflow.model.Intersection;
 import com.cityflow.model.Vehicle;
 import com.cityflow.network.SimulationServer;
@@ -23,19 +24,20 @@ import java.util.concurrent.TimeUnit;
 public class Main {
     private static final int GRID_SIZE = 10;
     private static final int SERVER_PORT = 8080;
-    private static final int VEHICLE_SPAWN_INTERVAL_MS = 2000; // 2 seconds
-    
     private static List<Intersection> intersections;
     private static CentralController controller;
     private static SimulationServer server;
     private static ExecutorService intersectionExecutor;
     private static ExecutorService vehicleExecutor;
     private static ScheduledExecutorService vehicleSpawner;
-    private static JFrame gui;
+    private static CityFlowShellFrame gui;
+    private static long lastVehicleSpawnAt;
     private static DatabaseManager dbManager;
+    private static final Random SPAWN_RNG = new Random();
     private static volatile boolean running = true;
     
     public static void main(String[] args) {
+        AppLookAndFeel.install();
         System.out.println("=== CityFlow Traffic Simulation ===");
         System.out.println("Initializing simulation...");
         
@@ -58,10 +60,18 @@ public class Main {
         
         // Start vehicle spawning
         startVehicleSpawning();
+        for (int i = 0; i < 15; i++) {
+            spawnVehicle();
+        }
+        vehicleSpawner.schedule(() -> {
+            if (running && intersections != null) {
+                spawnVehicleBurst(55);
+            }
+        }, 900, TimeUnit.MILLISECONDS);
         
-        // Create and display optimized professional GUI
+        // Multi-page operations suite (tabs: live map, registry, diagnostics, scenarios, about)
         SwingUtilities.invokeLater(() -> {
-            gui = new com.cityflow.gui.OptimizedProfessionalGUI(intersections, controller);
+            gui = new CityFlowShellFrame(intersections, controller, SERVER_PORT);
             gui.setVisible(true);
         });
         
@@ -121,32 +131,85 @@ public class Main {
         vehicleExecutor = Executors.newCachedThreadPool();
         vehicleSpawner = Executors.newScheduledThreadPool(1);
         
+        lastVehicleSpawnAt = System.currentTimeMillis();
         vehicleSpawner.scheduleAtFixedRate(() -> {
-            if (running) {
-                spawnVehicle();
+            if (!running || SimulationRuntime.isSpawningPaused()) {
+                return;
             }
-        }, 0, VEHICLE_SPAWN_INTERVAL_MS, TimeUnit.MILLISECONDS);
+            long now = System.currentTimeMillis();
+            int interval = SimulationRuntime.getVehicleSpawnIntervalMs();
+            if (now - lastVehicleSpawnAt >= interval) {
+                lastVehicleSpawnAt = now;
+                spawnVehicle();
+                spawnVehicle();
+                if (SPAWN_RNG.nextDouble() < 0.48) {
+                    spawnVehicle();
+                }
+                if (SPAWN_RNG.nextDouble() < 0.28) {
+                    spawnVehicle();
+                }
+            }
+        }, 0, 200, TimeUnit.MILLISECONDS);
         
         System.out.println("Vehicle spawning started");
     }
     
     /**
+     * Spawns several vehicles immediately (used by Scenario Lab stress tests).
+     */
+    public static void spawnVehicleBurst(int count) {
+        if (!running || intersections == null) {
+            return;
+        }
+        int n = Math.max(0, Math.min(80, count));
+        for (int i = 0; i < n; i++) {
+            spawnVehicle();
+        }
+    }
+
+    /**
      * Spawns a new vehicle and adds it to a random intersection
      */
     private static void spawnVehicle() {
-        String vehicleId = "V-" + System.currentTimeMillis();
+        if (vehicleExecutor == null || intersections == null || controller == null) {
+            return;
+        }
+        String vehicleId = "V-" + System.nanoTime();
         Vehicle vehicle = new Vehicle(vehicleId, GRID_SIZE);
         
         // Get starting intersection
         String startIntersection = vehicle.getPath().get(0);
         
         // Find intersection and add vehicle
+        boolean placed = false;
         for (Intersection intersection : intersections) {
             if (intersection.getIntersectionId().equals(startIntersection)) {
                 intersection.addVehicle(vehicle);
-                vehicleExecutor.execute(vehicle);
+                controller.recordSimVehicleSpawned();
+                vehicleExecutor.execute(() -> {
+                    controller.beginSimTrip();
+                    try {
+                        vehicle.run();
+                    } finally {
+                        controller.endSimTrip();
+                    }
+                });
+                placed = true;
                 break;
             }
+        }
+        if (!placed && intersections != null && !intersections.isEmpty()) {
+            Intersection fallback = intersections.get(SPAWN_RNG.nextInt(intersections.size()));
+            fallback.addVehicle(vehicle);
+            controller.recordSimVehicleSpawned();
+            vehicleExecutor.execute(() -> {
+                controller.beginSimTrip();
+                try {
+                    vehicle.run();
+                } finally {
+                    controller.endSimTrip();
+                }
+            });
         }
     }
     
@@ -210,15 +273,8 @@ public class Main {
             server.shutdown();
         }
         
-        // Stop GUI
         if (gui != null) {
-            if (gui instanceof com.cityflow.gui.OptimizedProfessionalGUI) {
-                ((com.cityflow.gui.OptimizedProfessionalGUI) gui).stopAnimation();
-            } else if (gui instanceof com.cityflow.gui.ProfessionalGUI) {
-                ((com.cityflow.gui.ProfessionalGUI) gui).stopAnimation();
-            } else if (gui instanceof com.cityflow.gui.EnhancedSimulationGUI) {
-                ((com.cityflow.gui.EnhancedSimulationGUI) gui).stopAnimation();
-            }
+            gui.shutdownEmbedded();
             gui.dispose();
         }
         

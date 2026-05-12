@@ -19,12 +19,12 @@ public class Vehicle implements Runnable {
     
     public Vehicle(String vehicleId, int gridSize) {
         this.vehicleId = vehicleId;
+        this.random = new Random();
         this.path = generateRandomPath(gridSize);
         this.currentIntersectionIndex = 0;
         this.totalWaitTime = 0;
         this.startTime = System.currentTimeMillis();
         this.running = true;
-        this.random = new Random();
     }
     
     /**

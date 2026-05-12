@@ -19,6 +19,7 @@ public class Intersection implements Runnable {
     private volatile boolean running;
     private long lastSignalChange;
     private int queueLength;
+    private long lastVehicleDispatchedAt;
     
     public Intersection(int x, int y) {
         this.intersectionId = x + "," + y;
@@ -73,13 +74,17 @@ public class Intersection implements Runnable {
     }
     
     /**
-     * Processes vehicles waiting at the intersection
+     * Processes vehicles waiting at the intersection (throttled so queues can build during green).
      */
     private void processVehicles() {
+        long now = System.currentTimeMillis();
+        if (now - lastVehicleDispatchedAt < 720) {
+            return;
+        }
         Vehicle vehicle = vehicleQueue.poll();
         if (vehicle != null) {
+            lastVehicleDispatchedAt = now;
             vehiclesProcessed.incrementAndGet();
-            // Vehicle continues on its journey (handled by vehicle thread)
         }
     }
     
@@ -151,8 +156,9 @@ public class Intersection implements Runnable {
      * Returns congestion level (0.0 to 1.0)
      */
     public double getCongestionLevel() {
-        // Simple heuristic: queue length relative to capacity
-        int capacity = 20; // arbitrary max queue before severe congestion
+        // Queue length relative to capacity — tighter capacity so the grid saturates faster
+        // and the performance chart responds with visible swings as hotspots form and clear.
+        int capacity = 5;
         return Math.min(1.0, (double) queueLength / capacity);
     }
 }

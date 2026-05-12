@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Ultra-optimized professional GUI with smooth 60 FPS performance
+ * Ultra-optimized professional dashboard (map, KPIs, charts). Embedded in {@link CityFlowShellFrame} tabs.
  */
-public class OptimizedProfessionalGUI extends JFrame {
+public class OptimizedProfessionalGUI extends JPanel {
     private final List<Intersection> intersections;
     private final CentralController controller;
     private final OptimizedMapPanel mapPanel;
@@ -41,20 +41,17 @@ public class OptimizedProfessionalGUI extends JFrame {
         this.random = new Random();
         this.startTime = System.currentTimeMillis();
         
-        setTitle("CityFlow - Professional Traffic Management System");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Auto-maximize
-        
-        // Main layout
         setLayout(new BorderLayout(0, 0));
+        setOpaque(true);
+        setBackground(UiTheme.BG_DEEP);
         
         // Header
         add(createHeader(), BorderLayout.NORTH);
         
         // Main content
         JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
-        mainPanel.setBackground(new Color(240, 242, 245));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        mainPanel.setBackground(UiTheme.BG_APP);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(12, 16, 16, 16));
         
         // Create panels
         mapPanel = new OptimizedMapPanel();
@@ -63,89 +60,84 @@ public class OptimizedProfessionalGUI extends JFrame {
         
         // Map (center)
         JScrollPane mapScroll = new JScrollPane(mapPanel);
-        mapScroll.setBorder(createTitledBorder("🗺️  LIVE CITY TRAFFIC MAP"));
+        mapScroll.setBorder(wrapTitled("Live city traffic map"));
+        UiTheme.styleScroll(mapScroll);
         mainPanel.add(mapScroll, BorderLayout.CENTER);
         
         // Stats (right)
         JScrollPane statsScroll = new JScrollPane(statsPanel);
-        statsScroll.setBorder(createTitledBorder("📊  ANALYTICS DASHBOARD"));
-        statsScroll.setPreferredSize(new Dimension(350, 600));
+        statsScroll.setBorder(wrapTitled("Analytics dashboard"));
+        statsScroll.setPreferredSize(new Dimension(360, 600));
+        UiTheme.styleScroll(statsScroll);
         mainPanel.add(statsScroll, BorderLayout.EAST);
         
         // Charts (bottom)
-        chartsPanel.setBorder(createTitledBorder("📈  REAL-TIME PERFORMANCE METRICS"));
+        chartsPanel.setBorder(wrapTitled("Live congestion — sim cars, queues, grid"));
         chartsPanel.setPreferredSize(new Dimension(1000, 200));
         mainPanel.add(chartsPanel, BorderLayout.SOUTH);
         
         add(mainPanel, BorderLayout.CENTER);
         
         // Spawn initial vehicles
-        spawnVehicles(40);
+        spawnVehicles(85);
         
         // Start optimized animation
         startOptimizedAnimation();
     }
     
     private JPanel createHeader() {
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(new Color(25, 35, 50));
-        header.setBorder(BorderFactory.createEmptyBorder(18, 25, 18, 25));
+        JPanel header = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int w = getWidth();
+                int h = getHeight();
+                GradientPaint gp = new GradientPaint(0, 0, new Color(0x162032), w, h, new Color(0x0c1520));
+                g2.setPaint(gp);
+                g2.fillRect(0, 0, w, h);
+                g2.setColor(new Color(77, 171, 247, 60));
+                g2.fillRect(0, h - 2, w, 2);
+                g2.dispose();
+            }
+        };
+        header.setOpaque(false);
+        header.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
         
-        // Left
-        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         left.setOpaque(false);
-        
         JLabel icon = new JLabel("🚦");
-        icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 30));
+        icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 26));
         left.add(icon);
-        
-        JLabel title = new JLabel("CityFlow Traffic Management System");
-        title.setForeground(Color.WHITE);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        JLabel title = new JLabel("Live operations center");
+        title.setForeground(UiTheme.TEXT);
+        title.setFont(UiTheme.fontUi(Font.BOLD, 18));
         left.add(title);
-        
+        JLabel sub = new JLabel("  ·  10×10 grid  ·  predictive signals");
+        sub.setForeground(UiTheme.TEXT_MUTED);
+        sub.setFont(UiTheme.fontUi(Font.PLAIN, 13));
+        left.add(sub);
         header.add(left, BorderLayout.WEST);
         
-        // Right
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 0));
         right.setOpaque(false);
-        
         JLabel live = new JLabel("● LIVE");
-        live.setForeground(new Color(50, 255, 100));
-        live.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        live.setForeground(UiTheme.SUCCESS);
+        live.setFont(UiTheme.fontUi(Font.BOLD, 13));
         right.add(live);
-        
-        JLabel sep1 = new JLabel("|");
-        sep1.setForeground(new Color(150, 150, 150));
-        right.add(sep1);
-        
-        JLabel ints = new JLabel("100 Intersections");
-        ints.setForeground(new Color(200, 220, 255));
-        ints.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        JLabel ints = new JLabel("100 nodes");
+        ints.setForeground(UiTheme.TEXT_MUTED);
+        ints.setFont(UiTheme.fontUi(Font.PLAIN, 13));
         right.add(ints);
-        
-        JLabel sep2 = new JLabel("|");
-        sep2.setForeground(new Color(150, 150, 150));
-        right.add(sep2);
-        
-        JLabel analytics = new JLabel("Real-time Analytics");
-        analytics.setForeground(new Color(200, 220, 255));
-        analytics.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        right.add(analytics);
-        
         header.add(right, BorderLayout.EAST);
-        
         return header;
     }
     
-    private javax.swing.border.Border createTitledBorder(String title) {
+    private javax.swing.border.Border wrapTitled(String title) {
         return BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
-                title,
-                0, 0, new Font("Segoe UI", Font.BOLD, 14), new Color(70, 130, 180)
-            ),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            UiTheme.titled(title),
+            BorderFactory.createEmptyBorder(8, 10, 10, 10)
         );
     }
     
@@ -165,8 +157,8 @@ public class OptimizedProfessionalGUI extends JFrame {
                 v.update();
             }
             
-            // Spawn new vehicles occasionally
-            if (frameCount % 90 == 0 && vehicles.size() < 50) {
+            // Spawn new vehicles occasionally (visual layer — denser for busier map)
+            if (frameCount % 22 == 0 && vehicles.size() < 100) {
                 vehicles.add(new Vehicle());
                 totalVehiclesSpawned++;
             }
@@ -181,7 +173,7 @@ public class OptimizedProfessionalGUI extends JFrame {
                 statsPanel.updateStats();
             }
             
-            if (frameCount % 30 == 0) { // Update chart every 30 frames (2 times/sec)
+            if (frameCount % 6 == 0) {
                 chartsPanel.updateChart();
             }
         });
@@ -195,7 +187,7 @@ public class OptimizedProfessionalGUI extends JFrame {
         private BufferedImage roadLayer; // Cache road network
         
         public OptimizedMapPanel() {
-            setBackground(new Color(230, 235, 240));
+            setBackground(UiTheme.BG_CARD_INSET);
             setPreferredSize(new Dimension(GRID_SIZE * CELL_SIZE + 100, GRID_SIZE * CELL_SIZE + 100));
             setDoubleBuffered(true);
             
@@ -214,11 +206,11 @@ public class OptimizedProfessionalGUI extends JFrame {
             int offsetY = 50;
             
             // Background
-            g2d.setColor(new Color(230, 235, 240));
+            g2d.setColor(UiTheme.BG_CARD_INSET);
             g2d.fillRect(0, 0, width, height);
             
             // Roads
-            g2d.setColor(new Color(55, 55, 65));
+            g2d.setColor(new Color(0x334155));
             g2d.setStroke(new BasicStroke(7, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             
             for (int i = 0; i <= GRID_SIZE; i++) {
@@ -230,7 +222,7 @@ public class OptimizedProfessionalGUI extends JFrame {
             }
             
             // Lane marks
-            g2d.setColor(new Color(255, 220, 60));
+            g2d.setColor(new Color(250, 204, 21, 140));
             float[] dash = {8f, 8f};
             g2d.setStroke(new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, dash, 0f));
             
@@ -277,14 +269,14 @@ public class OptimizedProfessionalGUI extends JFrame {
             
             // Congestion heatmap
             double cong = intersection.getCongestionLevel();
-            Color heat = cong < 0.3 ? new Color(100, 230, 100, 70) :
-                        cong < 0.6 ? new Color(255, 200, 60, 70) :
-                        new Color(255, 80, 80, 70);
+            Color heat = cong < 0.3 ? new Color(34, 197, 94, 100) :
+                        cong < 0.6 ? new Color(250, 204, 21, 110) :
+                        new Color(248, 113, 113, 120);
             g2d.setColor(heat);
             g2d.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
             
             // Intersection platform
-            g2d.setColor(new Color(130, 130, 140));
+            g2d.setColor(new Color(0x475569));
             g2d.fillRoundRect(cx - 12, cy - 12, 24, 24, 4, 4);
             
             // Traffic light
@@ -376,37 +368,42 @@ public class OptimizedProfessionalGUI extends JFrame {
     private class OptimizedStatsPanel extends JPanel {
         private JLabel[] metricLabels = new JLabel[7];
         private JTextArea bottleneckArea;
+        private final String[] metricRowNames = {
+            "Sim vehicles spawned",
+            "Trips in flight",
+            "Congestion %",
+            "Spawns / min",
+            "Cars in queues",
+            "Prediction accuracy",
+            "Uptime"
+        };
         
         public OptimizedStatsPanel() {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            setBackground(Color.WHITE);
+            setBackground(UiTheme.BG_CARD);
+            setBorder(BorderFactory.createEmptyBorder(4, 8, 8, 8));
             
             add(Box.createVerticalStrut(10));
             
             JLabel title = new JLabel("LIVE METRICS");
-            title.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            title.setForeground(new Color(50, 50, 70));
+            title.setFont(UiTheme.fontUi(Font.BOLD, 14));
+            title.setForeground(UiTheme.TEXT);
             title.setAlignmentX(LEFT_ALIGNMENT);
             add(title);
             
             add(Box.createVerticalStrut(15));
             
-            String[] names = {
-                "Total Vehicles", "Active Vehicles", "Avg Congestion",
-                "Throughput", "Avg Wait Time", "Prediction Accuracy", "Uptime"
-            };
-            
-            for (int i = 0; i < names.length; i++) {
-                metricLabels[i] = createMetricLabel(names[i], "0");
+            for (int i = 0; i < metricRowNames.length; i++) {
+                metricLabels[i] = createMetricLabel(metricRowNames[i], "0");
                 add(metricLabels[i]);
                 add(Box.createVerticalStrut(10));
             }
             
             add(Box.createVerticalStrut(15));
             
-            JLabel btTitle = new JLabel("🚨 ALERTS");
-            btTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            btTitle.setForeground(new Color(50, 50, 70));
+            JLabel btTitle = new JLabel("Alerts");
+            btTitle.setFont(UiTheme.fontUi(Font.BOLD, 13));
+            btTitle.setForeground(UiTheme.WARNING);
             btTitle.setAlignmentX(LEFT_ALIGNMENT);
             add(btTitle);
             
@@ -414,17 +411,21 @@ public class OptimizedProfessionalGUI extends JFrame {
             
             bottleneckArea = new JTextArea(6, 25);
             bottleneckArea.setEditable(false);
-            bottleneckArea.setFont(new Font("Consolas", Font.PLAIN, 11));
-            bottleneckArea.setBackground(new Color(255, 250, 240));
+            bottleneckArea.setFont(UiTheme.fontMono(Font.PLAIN, 11));
+            bottleneckArea.setBackground(UiTheme.BG_CARD_INSET);
+            bottleneckArea.setForeground(UiTheme.TEXT);
+            bottleneckArea.setCaretColor(UiTheme.ACCENT);
+            bottleneckArea.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
             JScrollPane scroll = new JScrollPane(bottleneckArea);
             scroll.setAlignmentX(LEFT_ALIGNMENT);
+            UiTheme.styleScroll(scroll);
             add(scroll);
         }
         
         private JLabel createMetricLabel(String name, String value) {
             JLabel label = new JLabel(
-                "<html><b>" + name + ":</b><br>" +
-                "<span style='font-size:18px; color:#2E86AB'>" + value + "</span></html>"
+                "<html><b><span style=\"color:#94a3b8;\">" + name + "</span></b><br>"
+                    + "<span style=\"font-size:20px;color:#7dd3fc;\">" + value + "</span></html>"
             );
             label.setAlignmentX(LEFT_ALIGNMENT);
             label.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5));
@@ -434,21 +435,22 @@ public class OptimizedProfessionalGUI extends JFrame {
         public void updateStats() {
             Map<String, Object> stats = controller.getStatistics();
             
-            int total = totalVehiclesSpawned;
-            int active = vehicles.size();
-            double cong = (double) stats.get("averageCongestion");
-            double acc = (double) stats.get("predictionAccuracy");
+            long total = toLong(stats.get("simVehiclesSpawned"));
+            int inflight = toInt(stats.get("simTripsInFlight"));
+            int queued = toInt(stats.get("totalQueueLength"));
+            double cong = toDouble(stats.get("congestionForKpi"));
+            double acc = toDouble(stats.get("predictionAccuracy"));
             long uptime = (System.currentTimeMillis() - startTime) / 1000;
-            int throughput = (int) (total / Math.max(1, uptime / 60.0));
+            int spawnsPerMin = (int) (total / Math.max(1, uptime / 60.0));
             
-            updateMetric(0, String.valueOf(total), new Color(46, 134, 171));
-            updateMetric(1, String.valueOf(active), new Color(6, 167, 125));
+            updateMetric(0, String.valueOf(total), UiTheme.ACCENT);
+            updateMetric(1, String.valueOf(inflight), UiTheme.SUCCESS);
             updateMetric(2, String.format("%.1f%%", cong * 100), 
-                        cong > 0.6 ? new Color(230, 57, 70) : new Color(6, 167, 125));
-            updateMetric(3, throughput + "/min", new Color(46, 134, 171));
-            updateMetric(4, String.format("%.1fs", 2.0 + cong * 4), new Color(120, 120, 180));
-            updateMetric(5, String.format("%.1f%%", acc * 100), new Color(6, 167, 125));
-            updateMetric(6, String.format("%02d:%02d", uptime / 60, uptime % 60), new Color(100, 100, 120));
+                        cong > 0.6 ? UiTheme.DANGER : UiTheme.SUCCESS);
+            updateMetric(3, spawnsPerMin + "/min", UiTheme.ACCENT_GLOW);
+            updateMetric(4, String.valueOf(queued), queued > 45 ? UiTheme.DANGER : UiTheme.ACCENT_VIOLET);
+            updateMetric(5, String.format("%.1f%%", acc * 100), UiTheme.SUCCESS);
+            updateMetric(6, String.format("%02d:%02d", uptime / 60, uptime % 60), UiTheme.TEXT_MUTED);
             
             // Bottlenecks
             Map<String, String> bts = controller.getBottlenecks();
@@ -467,82 +469,160 @@ public class OptimizedProfessionalGUI extends JFrame {
         }
         
         private void updateMetric(int idx, String value, Color color) {
-            String name = metricLabels[idx].getText().split(":")[0].replace("<html><b>", "");
+            String name = metricRowNames[idx];
             metricLabels[idx].setText(
-                "<html><b>" + name + ":</b><br>" +
-                "<span style='font-size:18px; color:rgb(" + color.getRed() + "," +
-                color.getGreen() + "," + color.getBlue() + ")'>" + value + "</span></html>"
+                "<html><b><span style=\"color:#94a3b8;\">" + name + "</span></b><br>"
+                    + "<span style=\"font-size:20px;color:rgb(" + color.getRed() + ","
+                    + color.getGreen() + "," + color.getBlue() + ");\">" + value + "</span></html>"
             );
+        }
+
+        private static long toLong(Object o) {
+            return o instanceof Number ? ((Number) o).longValue() : 0L;
+        }
+
+        private static int toInt(Object o) {
+            return o instanceof Number ? ((Number) o).intValue() : 0;
+        }
+
+        private static double toDouble(Object o) {
+            return o instanceof Number ? ((Number) o).doubleValue() : 0.0;
         }
     }
     
     /**
      * Optimized charts panel with smooth animation
      */
-    private class OptimizedChartsPanel extends JPanel {
-        private LinkedList<Double> congestionData = new LinkedList<>();
-        private LinkedList<Integer> vehicleData = new LinkedList<>();
-        private static final int MAX_POINTS = 120; // 2 minutes at 1 sample/sec
-        
+        private class OptimizedChartsPanel extends JPanel {
+        private final LinkedList<Double> chartSeries = new LinkedList<>();
+        private final LinkedList<Double> avgSeries = new LinkedList<>();
+        private final LinkedList<Double> activitySeries = new LinkedList<>();
+        private static final int MAX_POINTS = 280;
+
         public OptimizedChartsPanel() {
-            setBackground(Color.WHITE);
+            setBackground(UiTheme.BG_CARD);
             setPreferredSize(new Dimension(1000, 200));
         }
-        
+
         public void updateChart() {
             Map<String, Object> stats = controller.getStatistics();
-            double cong = (double) stats.get("averageCongestion");
-            
-            congestionData.add(cong);
-            vehicleData.add(totalVehiclesSpawned);
-            
-            while (congestionData.size() > MAX_POINTS) {
-                congestionData.removeFirst();
-                vehicleData.removeFirst();
+            Object chartObj = stats.get("chartCongestion");
+            double chartVal = chartObj instanceof Double ? (Double) chartObj : (double) stats.get("averageCongestion");
+            Object fleetObj = stats.get("fleetQueuePressure");
+            double avgVal = fleetObj instanceof Double ? (Double) fleetObj : (double) stats.get("averageCongestion");
+            Object pulseObj = stats.get("chartActivityPulse");
+            double pulseVal = pulseObj instanceof Double ? (Double) pulseObj : 0.0;
+
+            chartSeries.add(chartVal);
+            avgSeries.add(avgVal);
+            activitySeries.add(pulseVal);
+
+            while (chartSeries.size() > MAX_POINTS) {
+                chartSeries.removeFirst();
+                avgSeries.removeFirst();
+                activitySeries.removeFirst();
             }
-            
+
             repaint();
         }
-        
+
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
-            if (congestionData.isEmpty()) return;
-            
+
+            if (chartSeries.isEmpty()) {
+                return;
+            }
+
             int w = getWidth() - 80;
             int h = getHeight() - 60;
             int x0 = 50;
             int y0 = 30;
-            
+
             // Axes
-            g2d.setColor(new Color(180, 180, 190));
+            g2d.setColor(UiTheme.BORDER_SOFT);
             g2d.setStroke(new BasicStroke(2));
             g2d.drawLine(x0, y0 + h, x0 + w, y0 + h);
             g2d.drawLine(x0, y0, x0, y0 + h);
-            
+
             // Grid
-            g2d.setColor(new Color(230, 230, 235));
+            g2d.setColor(new Color(0x1e293b));
             g2d.setStroke(new BasicStroke(1));
             for (int i = 0; i <= 4; i++) {
                 int y = y0 + (h * i / 4);
                 g2d.drawLine(x0, y, x0 + w, y);
             }
-            
-            // Congestion line
-            if (congestionData.size() > 1) {
-                g2d.setColor(new Color(231, 76, 60));
-                g2d.setStroke(new BasicStroke(3));
-                
+
+            int n = chartSeries.size();
+            int span = Math.max(1, n - 1);
+
+            // Filled area under primary (peak-weighted) series
+            if (n > 1) {
+                Path2D fill = new Path2D.Double();
+                fill.moveTo(x0, y0 + h);
+                int lastPx = x0;
+                for (int i = 0; i < n; i++) {
+                    int px = x0 + (int) ((long) i * w / span);
+                    int py = y0 + h - (int) (chartSeries.get(i) * h);
+                    fill.lineTo(px, py);
+                    lastPx = px;
+                }
+                fill.lineTo(lastPx, y0 + h);
+                fill.lineTo(x0, y0 + h);
+                fill.closePath();
+                g2d.setPaint(new GradientPaint(x0, y0, new Color(77, 171, 247, 55), x0, y0 + h, new Color(77, 171, 247, 0)));
+                g2d.fill(fill);
+            }
+
+            // Fleet queue pressure (dashed)
+            if (avgSeries.size() > 1) {
+                g2d.setColor(new Color(148, 163, 184, 160));
+                g2d.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[]{6, 5}, 0));
+                Path2D avgPath = new Path2D.Double();
+                boolean first = true;
+                for (int i = 0; i < avgSeries.size(); i++) {
+                    int px = x0 + (int) ((long) i * w / span);
+                    int py = y0 + h - (int) (avgSeries.get(i) * h);
+                    if (first) {
+                        avgPath.moveTo(px, py);
+                        first = false;
+                    } else {
+                        avgPath.lineTo(px, py);
+                    }
+                }
+                g2d.draw(avgPath);
+            }
+
+            // Sim activity: in-flight trips + queued cars (amber)
+            if (activitySeries.size() > 1) {
+                g2d.setColor(new Color(251, 191, 36, 200));
+                g2d.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                Path2D pulsePath = new Path2D.Double();
+                boolean first = true;
+                for (int i = 0; i < activitySeries.size(); i++) {
+                    int px = x0 + (int) ((long) i * w / span);
+                    int py = y0 + h - (int) (activitySeries.get(i) * h);
+                    if (first) {
+                        pulsePath.moveTo(px, py);
+                        first = false;
+                    } else {
+                        pulsePath.lineTo(px, py);
+                    }
+                }
+                g2d.draw(pulsePath);
+            }
+
+            // Primary: blended congestion including sim vehicle pressure
+            if (chartSeries.size() > 1) {
+                g2d.setColor(UiTheme.ACCENT);
+                g2d.setStroke(new BasicStroke(2.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
                 Path2D path = new Path2D.Double();
                 boolean first = true;
-                
-                for (int i = 0; i < congestionData.size(); i++) {
-                    int px = x0 + (i * w / MAX_POINTS);
-                    int py = y0 + h - (int) (congestionData.get(i) * h);
-                    
+                for (int i = 0; i < chartSeries.size(); i++) {
+                    int px = x0 + (int) ((long) i * w / span);
+                    int py = y0 + h - (int) (chartSeries.get(i) * h);
                     if (first) {
                         path.moveTo(px, py);
                         first = false;
@@ -550,19 +630,20 @@ public class OptimizedProfessionalGUI extends JFrame {
                         path.lineTo(px, py);
                     }
                 }
-                
                 g2d.draw(path);
             }
-            
+
             // Labels
-            g2d.setColor(new Color(60, 60, 80));
-            g2d.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            g2d.drawString("Congestion Level", x0 + w - 130, y0 - 8);
+            g2d.setColor(UiTheme.TEXT_MUTED);
+            g2d.setFont(UiTheme.fontUi(Font.BOLD, 11));
+            g2d.drawString("Cyan = congestion blend (grid + sim cars)", x0, y0 - 18);
+            g2d.drawString("Gray dashes = Σ queues   ·   Amber = in-flight + queued cars", x0, y0 - 4);
+            g2d.setFont(UiTheme.fontUi(Font.BOLD, 11));
             g2d.drawString("Time →", x0 + w - 50, y0 + h + 25);
-            
-            g2d.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+
+            g2d.setFont(UiTheme.fontUi(Font.PLAIN, 10));
             g2d.drawString("100%", x0 - 35, y0 + 5);
-            g2d.drawString("50%", x0 - 30, y0 + h/2 + 5);
+            g2d.drawString("50%", x0 - 30, y0 + h / 2 + 5);
             g2d.drawString("0%", x0 - 20, y0 + h + 5);
         }
     }

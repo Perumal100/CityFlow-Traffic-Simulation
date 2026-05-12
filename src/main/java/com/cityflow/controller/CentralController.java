@@ -1,10 +1,13 @@
 package com.cityflow.controller;
 
+import com.cityflow.SimulationRuntime;
 import com.cityflow.database.DatabaseManager;
 import com.cityflow.model.Intersection;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Central controller that coordinates traffic signals across all intersections.
@@ -17,7 +20,24 @@ public class CentralController implements Runnable {
     private final PredictiveAnalyzer analyzer;
     private volatile boolean running;
     private final int updateIntervalMs = 1000; // 1 second
-    
+
+    /** Live dashboard: vehicles successfully queued for simulation (same instance as GUI). */
+    private final AtomicLong simVehiclesSpawnedTotal = new AtomicLong();
+    /** Vehicles currently executing {@link com.cityflow.model.Vehicle#run()}. */
+    private final AtomicInteger simTripsInFlight = new AtomicInteger();
+
+    public void recordSimVehicleSpawned() {
+        simVehiclesSpawnedTotal.incrementAndGet();
+    }
+
+    public void beginSimTrip() {
+        simTripsInFlight.incrementAndGet();
+    }
+
+    public void endSimTrip() {
+        simTripsInFlight.updateAndGet(v -> Math.max(0, v - 1));
+    }
+
     public CentralController(List<Intersection> intersections) {
         this.intersections = intersections;
         this.densityReports = new ConcurrentHashMap<>();
@@ -256,14 +276,46 @@ public class CentralController implements Runnable {
             .mapToDouble(Intersection::getCongestionLevel)
             .average()
             .orElse(0.0);
-        
+        avgCongestion = Math.min(1.0, avgCongestion + SimulationRuntime.getCongestionBias());
+
         int totalQueueLength = intersections.stream()
             .mapToInt(Intersection::getQueueLength)
             .sum();
+
+        double maxCongestion = intersections.stream()
+            .mapToDouble(Intersection::getCongestionLevel)
+            .max()
+            .orElse(0.0);
+
+        // Fleet-wide queue pressure: vehicles are spawned randomly across 100 nodes, so per-cell
+        // averages stay near zero even when the system is busy. This metric lifts the chart off 0%.
+        final double queueScale = 10.0;
+        double fleetQueuePressure = Math.min(1.0, totalQueueLength / queueScale);
+
+        int tripsInFlight = simTripsInFlight.get();
+        long simVehiclesSpawned = simVehiclesSpawnedTotal.get();
+
+        // Tracks how "busy" the car population is: moving trips + physical queues (aligned with heavy spawn).
+        double activityPulse = Math.min(1.0, (tripsInFlight * 2.2 + totalQueueLength) / 38.0);
+
+        // Live chart blends geometry congestion with fleet backlog and live vehicle activity.
+        double chartCongestion = Math.min(1.0,
+            0.10 * avgCongestion + 0.24 * maxCongestion + 0.38 * fleetQueuePressure + 0.28 * activityPulse);
+
+        // Dashboard congestion % stays tied to the same blend family.
+        double congestionForKpi = Math.min(1.0,
+            0.16 * avgCongestion + 0.52 * fleetQueuePressure + 0.32 * activityPulse);
         
         stats.put("totalVehiclesProcessed", totalVehicles);
         stats.put("averageCongestion", avgCongestion);
+        stats.put("maxCongestion", maxCongestion);
+        stats.put("fleetQueuePressure", fleetQueuePressure);
+        stats.put("chartCongestion", chartCongestion);
+        stats.put("chartActivityPulse", activityPulse);
+        stats.put("congestionForKpi", congestionForKpi);
         stats.put("totalQueueLength", totalQueueLength);
+        stats.put("simVehiclesSpawned", simVehiclesSpawned);
+        stats.put("simTripsInFlight", tripsInFlight);
         stats.put("activeIntersections", intersections.size());
         stats.put("predictionAccuracy", analyzer.getOverallAccuracy());
         
@@ -275,6 +327,42 @@ public class CentralController implements Runnable {
      */
     public Map<String, String> getBottlenecks() {
         return analyzer.analyzeBottlenecks(intersections);
+    }
+
+    /**
+     * Row/column congestion snapshot for strategy and corridor views.
+     */
+    public List<String> getCorridorHealthLines() {
+        int gridSize = (int) Math.sqrt(intersections.size());
+        if (gridSize * gridSize != intersections.size()) {
+            return List.of("Grid is not square; corridor summary unavailable.");
+        }
+        List<String> lines = new ArrayList<>();
+        for (int row = 0; row < gridSize; row++) {
+            final int r = row;
+            double avg = intersections.stream()
+                .filter(i -> i.getY() == r)
+                .mapToDouble(Intersection::getCongestionLevel)
+                .average()
+                .orElse(0.0);
+            String mode = (avg > 0.3 && avg < 0.7) ? "green-wave window" : "adaptive / local";
+            lines.add(String.format("Row %2d  avg %3.0f%%  (%s)", row, avg * 100, mode));
+        }
+        for (int col = 0; col < gridSize; col++) {
+            final int c = col;
+            double avg = intersections.stream()
+                .filter(i -> i.getX() == c)
+                .mapToDouble(Intersection::getCongestionLevel)
+                .average()
+                .orElse(0.0);
+            String mode = (avg > 0.3 && avg < 0.7) ? "green-wave window" : "adaptive / local";
+            lines.add(String.format("Col %2d  avg %3.0f%%  (%s)", col, avg * 100, mode));
+        }
+        return lines;
+    }
+
+    public List<Intersection> getIntersectionsView() {
+        return Collections.unmodifiableList(intersections);
     }
     
     public void stop() {
