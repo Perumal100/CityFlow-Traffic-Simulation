@@ -66,8 +66,8 @@ Real-time multi-threaded traffic simulation with predictive analytics, adaptive 
 
 **Team Members:**
 - **Perumal Marimuthu** - [@Perumal100](https://github.com/Perumal100)
-- **Ashik John** - Database & Analytics
-- **Achyuthan Sivasankar** - GUI & Testing
+- **Ashik John**
+- **Achyuthan Sivasankar**
 
 **Institution:** New York University Tandon School of Engineering  
 **Course:** CS6103 - Introduction to Java  
