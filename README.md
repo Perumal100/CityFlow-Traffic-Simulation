@@ -372,29 +372,29 @@ CityFlow-Traffic-Simulation/
 
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|
-| GUI Frame Rate | 60 FPS | 60 FPS | ✅ |
-| Concurrent Threads | 100+ | 104 | ✅ |
-| Vehicle Processing | 40-60 active | 45 avg | ✅ |
-| Prediction Accuracy | >80% | 87% | ✅ |
-| Memory Usage | <1 GB | 450 MB | ✅ |
-| Startup Time | <5 sec | 3.2 sec | ✅ |
-| Race Conditions | 0 | 0 | ✅ |
-| Deadlocks | 0 | 0 | ✅ |
+| GUI Frame Rate | 60 FPS | 60 FPS | Done |
+| Concurrent Threads | 100+ | 104 | Done |
+| Vehicle Processing | 40-60 active | 45 avg | Done |
+| Prediction Accuracy | >80% | 87% | Done |
+| Memory Usage | <1 GB | 450 MB | Done |
+| Startup Time | <5 sec | 3.2 sec | Done |
+| Race Conditions | 0 | 0 | Done |
+| Deadlocks | 0 | 0 | Done |
 
 ---
 
 ### Concepts Demonstrated:
-✅ Multi-threading (100+ threads)  
-✅ Thread synchronization  
-✅ Producer-Consumer pattern  
-✅ Thread-safe data structures  
-✅ Concurrent collections  
-✅ Atomic operations  
-✅ Lock-free algorithms  
-✅ GUI programming  
-✅ Network programming  
-✅ Algorithm design  
-✅ Performance optimization  
+ Multi-threading (100+ threads)  
+ Thread synchronization  
+ Producer-Consumer pattern  
+ Thread-safe data structures  
+ Concurrent collections  
+ Atomic operations  
+ Lock-free algorithms  
+ GUI programming  
+ Network programming  
+ Algorithm design  
+ Performance optimization  
 
 ---
 
@@ -421,7 +421,7 @@ https://github.com/Perumal100/CityFlow-Traffic-Simulation/issues
 
 **Team Contact:**
 - Perumal Marimuthu - [@Perumal100](https://github.com/Perumal100)
-- Email: perumal74300@gmail.com
+- Email: pm4069@nyu.edu
 
 ---
 
